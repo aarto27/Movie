@@ -40,9 +40,10 @@ export interface Actor {
 
 async function fetchTMDB<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(`${BASE}${path}`);
-  url.searchParams.set("api_key", API_KEY);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${BEARER_TOKEN}` },
+  });
   if (!res.ok) throw new Error(`TMDB error: ${res.status}`);
   return res.json();
 }
