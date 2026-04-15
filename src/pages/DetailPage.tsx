@@ -33,6 +33,10 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   const backdrop = getBackdrop(detail.backdrop_path);
   const trailer = detail.videos?.results.find((v) => v.type === "Trailer" && v.site === "YouTube");
   const embedId = detail.id;
+  const playerUrl =
+    type === "movie"
+      ? `https://www.2embed.cc/embed/${embedId}`
+      : `https://www.2embed.cc/embedtvfull/${embedId}`;
 
   return (
     <>
@@ -130,13 +134,13 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
             </div>
             <div className="aspect-video">
               <iframe
-                src={type === "movie"
-                  ? `https://vidsrc.xyz/embed/movie/${embedId}`
-                  : `https://vidsrc.xyz/embed/tv/${embedId}`
-                }
+                key={playerUrl}
+                src={playerUrl}
+                title={`${getTitle(detail)} player`}
                 className="w-full h-full"
                 allowFullScreen
-                allow="autoplay; encrypted-media"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                referrerPolicy="origin-when-cross-origin"
               />
             </div>
           </motion.div>
