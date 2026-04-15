@@ -134,13 +134,13 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
             </div>
             <div className="aspect-video">
               <iframe
-                src={type === "movie"
-                  ? `https://vidsrc.xyz/embed/movie/${embedId}`
-                  : `https://vidsrc.xyz/embed/tv/${embedId}`
-                }
+                key={playerUrl}
+                src={playerUrl}
+                title={`${getTitle(detail)} player`}
                 className="w-full h-full"
                 allowFullScreen
-                allow="autoplay; encrypted-media"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                referrerPolicy="origin-when-cross-origin"
               />
             </div>
           </motion.div>
