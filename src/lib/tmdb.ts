@@ -1,4 +1,4 @@
-const API_KEY = "d4ee0827b38fade1ff61de1f12a04755";
+const BEARER_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkNGVlMDgyN2IzOGZhZGUxZmY2MWRlMWYxMmEwNDc1NSIsIm5iZiI6MTc0NDcxNjM5OC40NjksInN1YiI6IjY3ZmViNTBlNjUxZmNhMDkyMzQ1ODI1MSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.UBSHslPkTkfqCMPxMOZSFCs3BPXI6_06ubBZxOft9Fw";
 const BASE = "https://api.themoviedb.org/3";
 
 export const IMG_BASE = "https://image.tmdb.org/t/p";
