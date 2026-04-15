@@ -1,4 +1,4 @@
-const API_KEY = "d4ee0827b38fade1ff61de1f12a04755";
+const BEARER_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkNGVlMDgyN2IzOGZhZGUxZmY2MWRlMWYxMmEwNDc1NSIsIm5iZiI6MTc0NDcxNjM5OC40NjksInN1YiI6IjY3ZmViNTBlNjUxZmNhMDkyMzQ1ODI1MSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.UBSHslPkTkfqCMPxMOZSFCs3BPXI6_06ubBZxOft9Fw";
 const BASE = "https://api.themoviedb.org/3";
 
 export const IMG_BASE = "https://image.tmdb.org/t/p";
@@ -40,9 +40,10 @@ export interface Actor {
 
 async function fetchTMDB<T>(path: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(`${BASE}${path}`);
-  url.searchParams.set("api_key", API_KEY);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${BEARER_TOKEN}` },
+  });
   if (!res.ok) throw new Error(`TMDB error: ${res.status}`);
   return res.json();
 }
