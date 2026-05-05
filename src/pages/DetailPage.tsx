@@ -48,11 +48,12 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   const trailer = detail.videos?.results.find((v) => v.type === "Trailer" && v.site === "YouTube")
     || detail.videos?.results.find((v) => v.site === "YouTube");
   const embedId = detail.id;
+  const seasonsList = (detail.seasons || []).filter((s) => s.season_number > 0);
   const playerUrl = (() => {
     if (server === "vidsrc") {
       return type === "movie"
-        ? `https://vidsrc.xyz/embed/movie/${embedId}`
-        : `https://vidsrc.xyz/embed/tv/${embedId}/${season}/${episode}`;
+        ? `https://vidsrc.xyz/embed/movie?tmdb=${embedId}`
+        : `https://vidsrc.xyz/embed/tv?tmdb=${embedId}&season=${season}&episode=${episode}`;
     }
     if (server === "vidsrcto") {
       return type === "movie"
@@ -69,7 +70,17 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
       : `https://www.2embed.cc/embedtv/${embedId}&s=${season}&e=${episode}`;
   })();
 
-  const seasonsList = (detail.seasons || []).filter((s) => s.season_number > 0);
+  const totalEpisodes = seasonData?.episodes.length || 0;
+  const hasPrev = type === "tv" && (episode > 1 || season > 1);
+  const hasNext = type === "tv" && (episode < totalEpisodes || season < seasonsList.length);
+  const goPrev = () => {
+    if (episode > 1) setEpisode(episode - 1);
+    else if (season > 1) { setSeason(season - 1); setEpisode(1); }
+  };
+  const goNext = () => {
+    if (episode < totalEpisodes) setEpisode(episode + 1);
+    else if (season < seasonsList.length) { setSeason(season + 1); setEpisode(1); }
+  };
 
   return (
     <>
@@ -203,19 +214,33 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
           </section>
         )}
 
-        {/* Embedded Player */}
+        {/* Embedded Player (fullscreen modal) */}
         {showPlayer && (
-          <motion.div
-            initial={{ opacity: 0, scaleY: 0.95 }}
-            animate={{ opacity: 1, scaleY: 1 }}
-            className="mt-10 rounded-xl overflow-hidden bg-secondary"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-muted">
-              <span className="text-sm font-medium">
-                Now Playing{type === "tv" ? ` — S${season} E${episode}` : ""}
+          <div className="fixed inset-0 z-50 bg-background flex flex-col">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-muted border-b border-border">
+              <span className="text-sm font-medium truncate">
+                {getTitle(detail)}{type === "tv" ? ` — S${season} E${episode}` : ""}
               </span>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground">Server:</span>
+                {type === "tv" && (
+                  <>
+                    <button
+                      onClick={goPrev}
+                      disabled={!hasPrev}
+                      className="text-xs px-3 py-1 rounded bg-secondary text-secondary-foreground hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      ← Prev
+                    </button>
+                    <button
+                      onClick={goNext}
+                      disabled={!hasNext}
+                      className="text-xs px-3 py-1 rounded bg-gold text-primary-foreground hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Next →
+                    </button>
+                  </>
+                )}
+                <span className="text-xs text-muted-foreground ml-1">Server:</span>
                 {(["vidsrc", "vidsrcto", "2embed", "superembed"] as const).map((s) => (
                   <button
                     key={s}
@@ -227,12 +252,15 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
                     {s}
                   </button>
                 ))}
-                <button onClick={() => setShowPlayer(false)} className="text-muted-foreground hover:text-foreground text-sm ml-2">
-                  Close ✕
+                <button
+                  onClick={() => setShowPlayer(false)}
+                  className="text-muted-foreground hover:text-foreground text-sm ml-2 inline-flex items-center gap-1"
+                >
+                  <X size={16} /> Close
                 </button>
               </div>
             </div>
-            <div className="aspect-video">
+            <div className="flex-1 bg-black">
               <iframe
                 key={playerUrl}
                 src={playerUrl}
@@ -243,7 +271,7 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
                 referrerPolicy="origin-when-cross-origin"
               />
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Trailer modal with autoplay */}
