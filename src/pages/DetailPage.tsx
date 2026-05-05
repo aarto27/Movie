@@ -48,6 +48,7 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   const trailer = detail.videos?.results.find((v) => v.type === "Trailer" && v.site === "YouTube")
     || detail.videos?.results.find((v) => v.site === "YouTube");
   const embedId = detail.id;
+  const seasonsList = (detail.seasons || []).filter((s) => s.season_number > 0);
   const playerUrl = (() => {
     if (server === "vidsrc") {
       return type === "movie"
@@ -80,8 +81,6 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
     if (episode < totalEpisodes) setEpisode(episode + 1);
     else if (season < seasonsList.length) { setSeason(season + 1); setEpisode(1); }
   };
-
-  const seasonsList = (detail.seasons || []).filter((s) => s.season_number > 0);
 
   return (
     <>
