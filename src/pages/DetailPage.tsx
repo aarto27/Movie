@@ -143,11 +143,25 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
             animate={{ opacity: 1, scaleY: 1 }}
             className="mt-10 rounded-xl overflow-hidden bg-secondary"
           >
-            <div className="flex items-center justify-between px-4 py-2 bg-muted">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-muted">
               <span className="text-sm font-medium">Now Playing</span>
-              <button onClick={() => setShowPlayer(false)} className="text-muted-foreground hover:text-foreground text-sm">
-                Close ✕
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Server:</span>
+                {(["vidsrc", "vidsrcto", "2embed", "superembed"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setServer(s)}
+                    className={`text-xs px-2 py-1 rounded ${
+                      server === s ? "bg-gold text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-surface-hover"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+                <button onClick={() => setShowPlayer(false)} className="text-muted-foreground hover:text-foreground text-sm ml-2">
+                  Close ✕
+                </button>
+              </div>
             </div>
             <div className="aspect-video">
               <iframe
