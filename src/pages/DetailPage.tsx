@@ -51,8 +51,8 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   const playerUrl = (() => {
     if (server === "vidsrc") {
       return type === "movie"
-        ? `https://vidsrc.xyz/embed/movie/${embedId}`
-        : `https://vidsrc.xyz/embed/tv/${embedId}/${season}/${episode}`;
+        ? `https://vidsrc.xyz/embed/movie?tmdb=${embedId}`
+        : `https://vidsrc.xyz/embed/tv?tmdb=${embedId}&season=${season}&episode=${episode}`;
     }
     if (server === "vidsrcto") {
       return type === "movie"
@@ -68,6 +68,18 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
       ? `https://www.2embed.cc/embed/${embedId}`
       : `https://www.2embed.cc/embedtv/${embedId}&s=${season}&e=${episode}`;
   })();
+
+  const totalEpisodes = seasonData?.episodes.length || 0;
+  const hasPrev = type === "tv" && (episode > 1 || season > 1);
+  const hasNext = type === "tv" && (episode < totalEpisodes || season < seasonsList.length);
+  const goPrev = () => {
+    if (episode > 1) setEpisode(episode - 1);
+    else if (season > 1) { setSeason(season - 1); setEpisode(1); }
+  };
+  const goNext = () => {
+    if (episode < totalEpisodes) setEpisode(episode + 1);
+    else if (season < seasonsList.length) { setSeason(season + 1); setEpisode(1); }
+  };
 
   const seasonsList = (detail.seasons || []).filter((s) => s.season_number > 0);
 
