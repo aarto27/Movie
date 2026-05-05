@@ -60,6 +60,14 @@ export const getTopRated = (type: "movie" | "tv", page = "1") =>
 export const getDetails = (type: "movie" | "tv", id: number) =>
   fetchTMDB<MediaDetails>(`/${type}/${id}`, { append_to_response: "videos,credits,similar" });
 
+export interface SeasonDetails {
+  season_number: number;
+  episodes: { id: number; episode_number: number; name: string; overview: string; still_path: string | null; air_date: string; runtime?: number }[];
+}
+
+export const getSeason = (tvId: number, seasonNumber: number) =>
+  fetchTMDB<SeasonDetails>(`/tv/${tvId}/season/${seasonNumber}`);
+
 export const searchMulti = (query: string, page = "1") =>
   fetchTMDB<{ results: Media[]; total_pages: number }>("/search/multi", { query, page });
 
