@@ -34,10 +34,26 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   const backdrop = getBackdrop(detail.backdrop_path);
   const trailer = detail.videos?.results.find((v) => v.type === "Trailer" && v.site === "YouTube");
   const embedId = detail.id;
-  const playerUrl =
-    type === "movie"
+  const playerUrl = (() => {
+    if (server === "vidsrc") {
+      return type === "movie"
+        ? `https://vidsrc.xyz/embed/movie/${embedId}`
+        : `https://vidsrc.xyz/embed/tv/${embedId}`;
+    }
+    if (server === "vidsrcto") {
+      return type === "movie"
+        ? `https://vidsrc.to/embed/movie/${embedId}`
+        : `https://vidsrc.to/embed/tv/${embedId}`;
+    }
+    if (server === "superembed") {
+      return type === "movie"
+        ? `https://multiembed.mov/?video_id=${embedId}&tmdb=1`
+        : `https://multiembed.mov/?video_id=${embedId}&tmdb=1&s=1&e=1`;
+    }
+    return type === "movie"
       ? `https://www.2embed.cc/embed/${embedId}`
       : `https://www.2embed.cc/embedtvfull/${embedId}`;
+  })();
 
   return (
     <>
