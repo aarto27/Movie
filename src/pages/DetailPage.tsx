@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getDetails, MediaDetails, getTitle, getBackdrop, getPoster, getYear } from "@/lib/tmdb";
-import { Star, Clock, Calendar, Play } from "lucide-react";
+import { getDetails, getSeason, MediaDetails, SeasonDetails, getTitle, getBackdrop, getPoster, getYear } from "@/lib/tmdb";
+import { Star, Clock, Calendar, Play, X } from "lucide-react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import MediaRow from "@/components/MediaRow";
@@ -10,15 +10,28 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   const { id } = useParams();
   const [detail, setDetail] = useState<MediaDetails | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
   const [server, setServer] = useState<"vidsrc" | "vidsrcto" | "2embed" | "superembed">("vidsrc");
+  const [season, setSeason] = useState(1);
+  const [episode, setEpisode] = useState(1);
+  const [seasonData, setSeasonData] = useState<SeasonDetails | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setDetail(null);
     setShowPlayer(false);
+    setShowTrailer(false);
+    setSeason(1);
+    setEpisode(1);
     getDetails(type, Number(id)).then(setDetail);
     window.scrollTo(0, 0);
   }, [type, id]);
+
+  useEffect(() => {
+    if (type !== "tv" || !detail) return;
+    setSeasonData(null);
+    getSeason(detail.id, season).then(setSeasonData).catch(() => setSeasonData(null));
+  }, [type, detail, season]);
 
   if (!detail) {
     return (
@@ -32,28 +45,31 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   }
 
   const backdrop = getBackdrop(detail.backdrop_path);
-  const trailer = detail.videos?.results.find((v) => v.type === "Trailer" && v.site === "YouTube");
+  const trailer = detail.videos?.results.find((v) => v.type === "Trailer" && v.site === "YouTube")
+    || detail.videos?.results.find((v) => v.site === "YouTube");
   const embedId = detail.id;
   const playerUrl = (() => {
     if (server === "vidsrc") {
       return type === "movie"
         ? `https://vidsrc.xyz/embed/movie/${embedId}`
-        : `https://vidsrc.xyz/embed/tv/${embedId}`;
+        : `https://vidsrc.xyz/embed/tv/${embedId}/${season}/${episode}`;
     }
     if (server === "vidsrcto") {
       return type === "movie"
         ? `https://vidsrc.to/embed/movie/${embedId}`
-        : `https://vidsrc.to/embed/tv/${embedId}`;
+        : `https://vidsrc.to/embed/tv/${embedId}/${season}/${episode}`;
     }
     if (server === "superembed") {
       return type === "movie"
         ? `https://multiembed.mov/?video_id=${embedId}&tmdb=1`
-        : `https://multiembed.mov/?video_id=${embedId}&tmdb=1&s=1&e=1`;
+        : `https://multiembed.mov/?video_id=${embedId}&tmdb=1&s=${season}&e=${episode}`;
     }
     return type === "movie"
       ? `https://www.2embed.cc/embed/${embedId}`
-      : `https://www.2embed.cc/embedtvfull/${embedId}`;
+      : `https://www.2embed.cc/embedtv/${embedId}&s=${season}&e=${episode}`;
   })();
+
+  const seasonsList = (detail.seasons || []).filter((s) => s.season_number > 0);
 
   return (
     <>
@@ -71,7 +87,6 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col md:flex-row gap-8"
         >
-          {/* Poster */}
           <div className="flex-shrink-0">
             <img
               src={getPoster(detail.poster_path, "w500")}
@@ -80,7 +95,6 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
             />
           </div>
 
-          {/* Info */}
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl md:text-5xl font-display font-bold mb-2">{getTitle(detail)}</h1>
             {detail.tagline && <p className="text-gold text-sm italic mb-4">"{detail.tagline}"</p>}
@@ -98,9 +112,7 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
               <span className="flex items-center gap-1">
                 <Calendar size={14} /> {getYear(detail)}
               </span>
-              {detail.number_of_seasons && (
-                <span>{detail.number_of_seasons} Seasons</span>
-              )}
+              {detail.number_of_seasons && <span>{detail.number_of_seasons} Seasons</span>}
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">
@@ -113,7 +125,7 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
 
             <p className="text-secondary-foreground leading-relaxed mb-6 max-w-2xl">{detail.overview}</p>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <button
                 onClick={() => setShowPlayer(true)}
                 className="inline-flex items-center gap-2 bg-gold text-primary-foreground font-semibold px-6 py-3 rounded-lg hover:brightness-110 transition"
@@ -122,19 +134,74 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
                 Watch Now
               </button>
               {trailer && (
-                <a
-                  href={`https://youtube.com/watch?v=${trailer.key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setShowTrailer(true)}
                   className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-lg hover:bg-surface-hover transition"
                 >
                   <Play size={18} />
-                  Trailer
-                </a>
+                  Watch Trailer
+                </button>
               )}
             </div>
           </div>
         </motion.div>
+
+        {/* Episode picker */}
+        {type === "tv" && seasonsList.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-display font-semibold mb-4 flex items-center gap-2">
+              <span className="w-1 h-6 bg-gold rounded-full" /> Episodes
+            </h2>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <label className="text-sm text-muted-foreground">Season:</label>
+              <select
+                value={season}
+                onChange={(e) => { setSeason(Number(e.target.value)); setEpisode(1); }}
+                className="bg-secondary text-secondary-foreground rounded-lg px-3 py-2 text-sm border border-border"
+              >
+                {seasonsList.map((s) => (
+                  <option key={s.id} value={s.season_number}>
+                    {s.name} ({s.episode_count} eps)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {seasonData ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {seasonData.episodes.map((ep) => {
+                  const active = ep.episode_number === episode;
+                  return (
+                    <button
+                      key={ep.id}
+                      onClick={() => { setEpisode(ep.episode_number); setShowPlayer(true); }}
+                      className={`text-left rounded-lg overflow-hidden bg-secondary border transition group ${
+                        active ? "border-gold ring-2 ring-gold/40" : "border-border hover:border-gold/60"
+                      }`}
+                    >
+                      <div className="aspect-video bg-muted relative">
+                        {ep.still_path ? (
+                          <img src={getPoster(ep.still_path, "w300")} alt={ep.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No preview</div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/40 opacity-0 group-hover:opacity-100 transition">
+                          <Play size={28} className="text-gold" fill="currentColor" />
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs text-gold font-medium">EP {ep.episode_number}</p>
+                        <p className="text-sm font-medium truncate">{ep.name}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Loading episodes…</div>
+            )}
+          </section>
+        )}
 
         {/* Embedded Player */}
         {showPlayer && (
@@ -144,8 +211,10 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
             className="mt-10 rounded-xl overflow-hidden bg-secondary"
           >
             <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-muted">
-              <span className="text-sm font-medium">Now Playing</span>
-              <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                Now Playing{type === "tv" ? ` — S${season} E${episode}` : ""}
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-muted-foreground">Server:</span>
                 {(["vidsrc", "vidsrcto", "2embed", "superembed"] as const).map((s) => (
                   <button
@@ -177,6 +246,34 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
           </motion.div>
         )}
 
+        {/* Trailer modal with autoplay */}
+        {showTrailer && trailer && (
+          <div
+            className="fixed inset-0 z-50 bg-background/90 flex items-center justify-center p-4"
+            onClick={() => setShowTrailer(false)}
+          >
+            <div
+              className="relative w-full max-w-5xl aspect-video bg-black rounded-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowTrailer(false)}
+                className="absolute top-2 right-2 z-10 bg-background/70 hover:bg-background text-foreground rounded-full p-2"
+                aria-label="Close trailer"
+              >
+                <X size={18} />
+              </button>
+              <iframe
+                src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0&modestbranding=1`}
+                title={`${getTitle(detail)} trailer`}
+                className="w-full h-full"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        )}
+
         {/* Cast */}
         {detail.credits?.cast && detail.credits.cast.length > 0 && (
           <section className="mt-12">
@@ -199,7 +296,6 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
           </section>
         )}
 
-        {/* Similar */}
         {detail.similar?.results && detail.similar.results.length > 0 && (
           <div className="mt-8">
             <MediaRow title="You May Also Like" items={detail.similar.results} type={type} />
