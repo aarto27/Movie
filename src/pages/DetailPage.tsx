@@ -10,6 +10,7 @@ export default function DetailPage({ type }: { type: "movie" | "tv" }) {
   const { id } = useParams();
   const [detail, setDetail] = useState<MediaDetails | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [server, setServer] = useState<"vidsrc" | "vidsrcto" | "2embed" | "superembed">("vidsrc");
 
   useEffect(() => {
     if (!id) return;
